@@ -38,7 +38,9 @@ class ActNorm(nn.Module):
 
             self.loc.data.copy_(-mean)
             self.scale.data.copy_(1 / (std + 1e-6))
-
+    # 1. In the GLOW model (block)
+        # a. change the input shape
+        # b. go to the flow
     def forward(self, input):
         _, _, height, width = input.shape
 
@@ -270,6 +272,7 @@ class Block(nn.Module):
 
     def forward(self, input):
         b_size, n_channel, height, width = input.shape
+        #TODO Linear Projection
         squeezed = input.view(b_size, n_channel, height // 2, 2, width // 2, 2)
         squeezed = squeezed.permute(0, 1, 3, 5, 2, 4)
         out = squeezed.contiguous().view(b_size, n_channel * 4, height // 2, width // 2)

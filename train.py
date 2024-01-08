@@ -35,10 +35,9 @@ parser.add_argument("--lr", default=1e-4, type=float, help="learning rate")
 parser.add_argument("--img_size", default=64, type=int, help="image size")
 parser.add_argument("--temp", default=0.7, type=float, help="temperature of sampling")
 parser.add_argument("--n_sample", default=20, type=int, help="number of samples")
-parser.add_argument("path", metavar="PATH", type=str, help="Path to image directory")
 
 
-def sample_data(path, batch_size, image_size):
+def sample_data(batch_size, image_size):
     transform = transforms.Compose(
         [
             transforms.Resize(image_size),
@@ -48,7 +47,7 @@ def sample_data(path, batch_size, image_size):
         ]
     )
 
-    dataset = datasets.ImageFolder(path, transform=transform)
+    dataset = datasets.CIFAR10("data", transform=transform, download=True)
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=4)
     loader = iter(loader)
 
@@ -94,7 +93,7 @@ def calc_loss(log_p, logdet, image_size, n_bins):
 
 
 def train(args, model, optimizer):
-    dataset = iter(sample_data(args.path, args.batch, args.img_size))
+    dataset = iter(sample_data(args.batch, args.img_size))
     n_bins = 2.0 ** args.n_bits
 
     z_sample = []
@@ -125,6 +124,10 @@ def train(args, model, optimizer):
 
             else:
                 log_p, logdet, _ = model(image + torch.rand_like(image) / n_bins)
+
+            if i % 39999 == 0:
+                np.save(f"logs/logdet_{i}.npy", logdet.cpu().detach().numpy())
+                np.save(f"logs/log_p_{i}.npy", log_p.cpu().detach().numpy())
 
             logdet = logdet.mean()
 
